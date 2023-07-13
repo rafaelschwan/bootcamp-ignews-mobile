@@ -1,9 +1,10 @@
 import { VStack, Image, Text, Center, Heading, ScrollView } from 'native-base';
-import { useNavigation } from '@react-navigation/native'; 
+import { useNavigation } from '@react-navigation/native';
 import { useForm, Controller } from 'react-hook-form';
 import { yupResolver } from '@hookform/resolvers/yup';
 import * as yup from 'yup';
 
+import { api } from '@services/api';
 import LogoSvg from '@assets/logo.svg';
 import BackgroundImg from '@assets/background.png';
 import { Input } from '@components/Input';
@@ -30,20 +31,35 @@ export function SignUp() {
   });
 
   const navigation = useNavigation();
- 
+
   function handleGoBack() {
     navigation.goBack();
   }
 
-  function handleSignUp(data: any) {
+  async function handleSignUp({ name, email, password }: FormDataProps) {
+    /*
+    const response = await fetch('http://192.168.0.115:3333/users', {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ name, email, password }),
+    });
+    const data = await response.json();
     console.log(data);
+    */
+    const response = await api.post('/users', {
+      name, email, password
+    });
+    console.log(response.data);
   }
 
   return (
-    <ScrollView 
+    <ScrollView
       contentContainerStyle={{ flexGrow: 1 }}
       showsVerticalScrollIndicator={false}
-    
+
     >
       <VStack flex={1} px={10} pb={16}>
 
@@ -53,23 +69,23 @@ export function SignUp() {
           alt='Pessoas treinando'
           resizeMode='contain'
           position='absolute'
-        /> 
-        
+        />
+
         <Center mt={24} mb={10}>
-          <LogoSvg /> 
+          <LogoSvg />
           <Text fontSize='sm' color='gray.100'>Treine sua mente e seu corpo</Text>
-        </Center> 
+        </Center>
 
         <Center>
           <Heading color='gray.100' fontSize='xl' mb={6} fontFamily='heading'>
             Crie sua conta
-          </Heading>  
+          </Heading>
 
-          <Controller 
-            control={control} 
+          <Controller
+            control={control}
             name='name'
             render={({ field: { onChange, value } }) => (
-              <Input 
+              <Input
                 placeholder='Nome'
                 onChangeText={onChange}
                 value={value}
@@ -78,11 +94,11 @@ export function SignUp() {
             )}
           />
 
-          <Controller 
-            control={control} 
+          <Controller
+            control={control}
             name='email'
             render={({ field: { onChange, value } }) => (
-              <Input 
+              <Input
                 placeholder='E-mail'
                 keyboardType='email-address'
                 autoCapitalize='none'
@@ -92,12 +108,12 @@ export function SignUp() {
               />
             )}
           />
-          
-          <Controller 
-            control={control} 
+
+          <Controller
+            control={control}
             name='password'
             render={({ field: { onChange, value } }) => (
-              <Input 
+              <Input
                 placeholder='Senha'
                 secureTextEntry
                 onChangeText={onChange}
@@ -107,11 +123,11 @@ export function SignUp() {
             )}
           />
 
-          <Controller 
-            control={control} 
+          <Controller
+            control={control}
             name='password_confirm'
             render={({ field: { onChange, value } }) => (
-              <Input 
+              <Input
                 placeholder='Confirme a senha'
                 secureTextEntry
                 onChangeText={onChange}
@@ -124,17 +140,17 @@ export function SignUp() {
           />
 
           <Button
-            title='Criar e acessar' 
+            title='Criar e acessar'
             onPress={handleSubmit(handleSignUp)}
           />
 
         </Center>
 
-        <Button 
-          mt={16} 
-          title='Voltar para login' 
-          variant='outline' 
-          onPress={handleGoBack} 
+        <Button
+          mt={16}
+          title='Voltar para login'
+          variant='outline'
+          onPress={handleGoBack}
         />
 
       </VStack>
