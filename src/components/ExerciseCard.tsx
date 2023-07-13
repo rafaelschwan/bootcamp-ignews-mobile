@@ -31,7 +31,7 @@ export function ExerciseCard({...rest}: Props) {
           mr={4}
         />
         <VStack flex={1}>
-          <Heading fontSize='md' color='white'>Remada unilateral</Heading>
+          <Heading fontSize='md' color='white' fontFamily='heading'>Remada unilateral</Heading>
           <Text numberOfLines={2} fontSize='sm' color='gray.200' mt={1}>
             3 séries de 12 repetições
           </Text>
