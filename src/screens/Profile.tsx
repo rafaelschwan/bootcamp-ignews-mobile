@@ -7,11 +7,16 @@ import * as ImagePicker from 'expo-image-picker';
 import * as FileSystem from 'expo-file-system';
 import * as yup from 'yup';
 
+import { api } from '@services/api';
+
+import { AppError } from '@utils/AppError';
+
+import { useAuth } from '@hooks/useAuth';
+
 import { ScreenHeader } from '@components/ScreenHeader';
 import { UserPhoto } from '@components/UserPhoto';
 import { Input } from '@components/Input';
 import { Button } from '@components/Button';
-import { useAuth } from '@hooks/useAuth';
 
 const PHOTO_SIZE = 33;
 
@@ -24,17 +29,32 @@ type FormDataProps = {
 }
 
 const profileSchema: any = yup.object({
-  name: yup.string().required('Informe o nome'),
-  email: yup.string(),
-  password: yup.string(),
-  old_password: yup.string(),
-  confirm_password: yup.string(),
+  name: yup
+    .string()
+    .required('Informe o nome'),
+  password: yup
+    .string()
+    .min(6, 'A senha deve ter pelo menos 6 digitos')
+    .nullable()
+    .transform((value) => !!value ? value : null),
+  confirm_password: yup
+    .string()
+    .nullable()
+    .transform((value) => !!value ? value : null)
+    .oneOf([yup.ref('password'), ''], 'A confirmação de senha não confere')
+    .when('password', {
+      is: (Field: any) => Field, // Field !== null
+      then: (schema) => schema
+        .nullable()
+        .required('Informe a confirmação da senha')
+        .transform((value) => !!value ? value : null),
+    }),
 });
- 
+  
 export function Profile() {
   
   const toast = useToast();
-  const { user } = useAuth();
+  const { user, updateUserProfile } = useAuth();
   const { control, handleSubmit, formState: { errors } } = useForm<FormDataProps>({ 
     defaultValues: {
       name: user.name,
@@ -42,6 +62,8 @@ export function Profile() {
     },
     resolver: yupResolver(profileSchema)
    });
+
+  const [isUpdating, setIsUpdating] = useState(false);
 
   const [photoIsLoading, setPhotoIsLoading] = useState(false);
   const [userPhoto, setUserPhoto] = useState('https://github.com/rafaelschwan.png');
@@ -86,7 +108,32 @@ export function Profile() {
   }   
 
   async function handleProfileUpdate(data: FormDataProps) {
-    console.log(data);
+    try {
+      setIsUpdating(true);
+
+      const userUpdated = user;
+      userUpdated.name = data.name;
+
+      await api.put('/users', data);
+      await updateUserProfile(userUpdated);
+
+      toast.show({
+        title: 'Perfil atualizado com sucesso',
+        placement: 'top',
+        bgColor: 'green.700'
+      })
+
+    } catch (error) {
+      const isAppError = error instanceof AppError;
+      const title = isAppError ? error.message : 'Não foi possível atualizar o perfil';
+      toast.show({
+        title,
+        placement: 'top',
+        bgColor: 'red.500'
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   }
 
   return (
@@ -160,7 +207,7 @@ export function Profile() {
                 placeholder='Senha antiga'
                 secureTextEntry
                 onChangeText={onChange}
-                errorMessage={errors.confirm_password?.message}
+                errorMessage={errors.old_password?.message}
               />)
             }
           />
@@ -176,6 +223,7 @@ export function Profile() {
                 placeholder='Nova senha'
                 secureTextEntry
                 onChangeText={onChange}
+                errorMessage={errors.password?.message}
               />)
             }
           />
@@ -190,6 +238,7 @@ export function Profile() {
                 placeholder='Confirme a nova senha'
                 secureTextEntry
                 onChangeText={onChange}
+                errorMessage={errors.confirm_password?.message}
               />)
             }
           />
@@ -198,6 +247,7 @@ export function Profile() {
             title='Atualizar'
             mt={4}
             onPress={handleSubmit(handleProfileUpdate)}
+            isLoading={isUpdating}
           />
 
         </VStack>
